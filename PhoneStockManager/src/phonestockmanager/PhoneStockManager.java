@@ -1,214 +1,224 @@
 package phonestockmanager;
 
-
-import javax.swing.JOptionPane;
+import javax.swing.*;
 import java.io.*;
 
 public class PhoneStockManager {
 
-    private final String FILE_PATH = "phone_stock.txt";
-    private int numPhones; // Current number of phones
-
-    public PhoneStockManager() {
-        numPhones = 0;
-        loadData(new Phone[100]); // Load data from file when the system is initialized
-    }
-
-    // Main method to run the program
     public static void main(String[] args) {
-        PhoneStockManager manager = new PhoneStockManager();
-        Phone[] phones = new Phone[100]; // Array to hold phone objects
+        // File path to store phone details
+        String FILE_PATH = "phone_stock.txt";
 
-        int choice; // Variable to store user's choice
+        // Create an array of Phone objects with 100 elements
+        Phone[] phoneStock = new Phone[100];
 
+        // Load phone details from file (if exists)
+        loadPhoneDetailsFromFile(phoneStock, FILE_PATH);
+
+        // Menu loop
+        int choice;
         do {
-            choice = Menu.showMenu(); // Show menu and get user's choice
+
+            // Parse user input
+            choice = Menu.showMenu(); // Show the menu and get user choice
 
             switch (choice) {
                 case 0:
-                    // Add a new phone
-                    String brand = JOptionPane.showInputDialog("Enter phone brand:");
-                    String model = JOptionPane.showInputDialog("Enter phone model:");
-                    double price = Double.parseDouble(JOptionPane.showInputDialog("Enter phone price:"));
-                    int stockQuantity = Integer.parseInt(JOptionPane.showInputDialog("Enter phone stock quantity:"));
-                    manager.addPhone(phones, brand, model, price, stockQuantity);
+                    addNewPhone(phoneStock); // Add a new phone
                     break;
                 case 1:
-                    // Print all phones
-                    manager.printAllPhones(phones);
+                    printAllPhones(phoneStock); // Print all phones
                     break;
                 case 2:
-                    // Search for a phone
-                    String searchBrand = JOptionPane.showInputDialog("Enter phone brand to search:");
-                    manager.searchPhone(phones, searchBrand);
+                    searchForPhone(phoneStock); // Search for a phone
                     break;
                 case 3:
-                    // Update phone details
-                    manager.updatePhoneDetails(phones);
+                    sortPhoneStockByPrice(phoneStock); // Sort phone stock by price
+                    JOptionPane.showMessageDialog(null, "Phone stock sorted by price.");
                     break;
                 case 4:
-                    // Sort phones by price
-                    manager.sortPhonesByPrice(phones);
+                    updatePhoneDetails(phoneStock); // Update phone details
                     break;
                 case 5:
-                    // Save phone details to file
-                    manager.savePhonesToFile(phones);
+                    savePhoneDetailsToFile(phoneStock, FILE_PATH); // Save phone details to file
                     break;
                 case 6:
-                    // Exit
-                    JOptionPane.showMessageDialog(null, "Exiting...");
+                    JOptionPane.showMessageDialog(null, "Exiting the program.");
                     break;
                 default:
-                    JOptionPane.showMessageDialog(null, "Invalid choice. Please select again.");
+                    JOptionPane.showMessageDialog(null, "Invalid choice. Please enter a valid option.");
             }
-        } while (choice != 6); // Repeat the loop until the user chooses to exit
+        } while (choice != 6);
     }
 
-    // Method to add a new phone to the system
-    public void addPhone(Phone[] phones, String brand, String model, double price, int stockQuantity) {
-        if (numPhones < 100) {
-            phones[numPhones] = new Phone(brand, model, price, stockQuantity);
-            numPhones++;
-            saveData(phones); // Save phone data to file
-            JOptionPane.showMessageDialog(null, "Phone added successfully!");
-        } else {
-            JOptionPane.showMessageDialog(null, "Error: Phone stock is full.");
-        }
+    // Method to add a new phone to the array
+    public static void addNewPhone(Phone[] phoneStock) {
+        // Input data for the new phone
+        String brand = JOptionPane.showInputDialog("Enter the brand of the phone:");
+        String model = JOptionPane.showInputDialog("Enter the model of the phone:");
+        double price = Double.parseDouble(JOptionPane.showInputDialog("Enter the price of the phone:"));
+        int stockQuantity = Integer.parseInt(JOptionPane.showInputDialog("Enter the stock quantity:"));
+
+        // Find the first available index in the array
+        int index = findNextAvailableIndex(phoneStock);
+
+        // Create and add the new phone object to the array
+        phoneStock[index] = new Phone(brand, model, price, stockQuantity);
+
+        JOptionPane.showMessageDialog(null, "Phone added successfully.");
     }
 
-    // Method to save phone data to file
-    private void saveData(Phone[] phones) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(FILE_PATH))) {
-            for (int i = 0; i < numPhones; i++) {
-                writer.println(phones[i].getBrand() + "," + phones[i].getModel() + "," + phones[i].getPrice() + ","
-                        + phones[i].getStockQuantity());
+    // Method to print details of all phones in the array
+    public static void printAllPhones(Phone[] phoneStock) {
+        // Check if the array is empty
+        boolean isEmpty = true;
+        for (Phone phone : phoneStock) {
+            if (phone != null) {
+                isEmpty = false;
+                break;
             }
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error: Failed to save data to file.");
         }
-    }
 
-    // Method to load phone data from file
-    private void loadData(Phone[] phones) {
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_PATH))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (numPhones < 100) {
-                    phones[numPhones] = new Phone(parts[0], parts[1], Double.parseDouble(parts[2]),
-                            Integer.parseInt(parts[3]));
-                    numPhones++;
-                }
-            }
-        } catch (IOException | ArrayIndexOutOfBoundsException | NumberFormatException e) {
-            JOptionPane.showMessageDialog(null, "Error: Failed to load data from file.");
-        }
-    }
-
-    // Method to print details of all phones
-    public void printAllPhones(Phone[] phones) {
-        if (numPhones == 0) {
-            JOptionPane.showMessageDialog(null, "No phones to display.");
+        if (isEmpty) {
+            JOptionPane.showMessageDialog(null, "No phones in the stock.");
             return;
         }
-        StringBuilder message = new StringBuilder("List of Phones:\n");
-        for (int i = 0; i < numPhones; i++) {
-            // Append phone details to the message
-            message.append("Brand: ").append(phones[i].getBrand()).append(", Model: ").append(phones[i].getModel())
-                    .append(", Price: $").append(phones[i].getPrice()).append(", Stock Quantity: ")
-                    .append(phones[i].getStockQuantity()).append("\n");
+
+        // Construct a message with details of all phones
+        StringBuilder message = new StringBuilder("Phone Stock:\n");
+        for (Phone phone : phoneStock) {
+            if (phone != null) {
+                message.append("\nBrand: ").append(phone.getBrand())
+                        .append(" Model: ").append(phone.getModel())
+                        .append(" Price: $").append(phone.getPrice())
+                        .append(" Stock Quantity: ").append(phone.getStockQuantity())
+                        .append("\n");
+            }
         }
+        // Display the scrollable JTextArea
         JOptionPane.showMessageDialog(null, message.toString());
     }
 
     // Method to search for a phone by brand
-    public void searchPhone(Phone[] phones, String brand) {
-        StringBuilder message = new StringBuilder();
+    public static void searchForPhone(Phone[] phoneStock) {
+        // Input data for searching
+        String brandToSearch = JOptionPane.showInputDialog("Enter the brand of the phone to search:");
+
+        // Search for phones with the specified brand in the array
         boolean found = false;
-        for (int i = 0; i < numPhones; i++) {
-            if (phones[i].getBrand().equalsIgnoreCase(brand)) {
-                // Append phone details to the message if found
-                message.append("Phone found:\n");
-                message.append("Brand: ").append(phones[i].getBrand()).append(", Model: ").append(phones[i].getModel())
-                        .append(", Price: $").append(phones[i].getPrice()).append(", Stock Quantity: ")
-                        .append(phones[i].getStockQuantity()).append("\n");
+        StringBuilder message = new StringBuilder("Phones found with brand '" + brandToSearch + "':\n");
+        for (Phone phone : phoneStock) {
+            if (phone != null && phone.getBrand().equalsIgnoreCase(brandToSearch)) {
                 found = true;
-                break;
+                message.append("\n").append("Model: ").append(phone.getModel())
+                        .append(", Price: $").append(phone.getPrice())
+                        .append(", Stock Quantity: ").append(phone.getStockQuantity());
             }
         }
-        if (!found) {
-            message.append("Phone with brand ").append(brand).append(" not found.");
-        }
-        JOptionPane.showMessageDialog(null, message.toString());
-    }
 
-    // Method to update details of a phone
-    private void updatePhoneDetails(Phone[] phones) {
-        String brand = JOptionPane.showInputDialog("Enter the brand of the phone to update details:");
-        if (brand == null) {
-            return; // User canceled
-        }
-
-        boolean found = false;
-        double price = 0.0;
-        int stockQuantity = 0;
-
-        for (int i = 0; i < numPhones; i++) {
-            if (phones[i].getBrand().equalsIgnoreCase(brand)) {
-                found = true;
-                try {
-                    price = Double.parseDouble(JOptionPane.showInputDialog("Enter the new price:"));
-                    stockQuantity = Integer.parseInt(JOptionPane.showInputDialog("Enter the new stock quantity:"));
-                    if (stockQuantity < 0 || price < 0) {
-                        JOptionPane.showMessageDialog(null, "Invalid price or quantity! Please enter positive values.");
-                        return;
-                    }
-                    // Update phone details
-                    phones[i].setPrice(price);
-                    phones[i].setStockQuantity(stockQuantity);
-                    JOptionPane.showMessageDialog(null, "Phone details updated successfully!");
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(null, "Invalid price or quantity format!");
-                }
-                break;
-            }
-        }
-        if (!found) {
-            JOptionPane.showMessageDialog(null, "No phone found with brand: " + brand, "Update Phone Details",
-                    JOptionPane.PLAIN_MESSAGE);
+        if (found) {
+            JOptionPane.showMessageDialog(null, message.toString());
+        } else {
+            JOptionPane.showMessageDialog(null, "No phones found with brand '" + brandToSearch + "'.");
         }
     }
 
-    // Method to sort phones by price
-    public void sortPhonesByPrice(Phone[] phones) {
-        boolean sorted = false;
-        while (!sorted) {
-            sorted = true;
-            for (int i = 0; i < numPhones - 1; i++) {
-                if (phones[i].getPrice() > phones[i + 1].getPrice()) {
-                    // Swap phones if they are not in ascending order of price
-                    Phone temp = phones[i];
-                    phones[i] = phones[i + 1];
-                    phones[i + 1] = temp;
-                    sorted = false;
-                }
+    // Method to find the next available index in the array
+    public static int findNextAvailableIndex(Phone[] phoneStock) {
+        for (int i = 0; i < phoneStock.length; i++) {
+            if (phoneStock[i] == null) {
+                return i;
             }
         }
-        JOptionPane.showMessageDialog(null, "Phones sorted by price.");
+        return -1; // No available index found
     }
 
-    // Method to save phone details to file
-    public void savePhonesToFile(Phone[] phones) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_PATH))) {
-            for (int i = 0; i < numPhones; i++) {
-                // Write phone details to the file
-                writer.write(phones[i].getBrand() + "," + phones[i].getModel() + "," + phones[i].getPrice() + ","
-                        + phones[i].getStockQuantity());
-                writer.newLine();
+    // Method to load phone details from a file
+    public static void loadPhoneDetailsFromFile(Phone[] phoneStock, String filePath) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            int index = 0;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                String brand = parts[0];
+                String model = parts[1];
+                double price = Double.parseDouble(parts[2]);
+                int stockQuantity = Integer.parseInt(parts[3]);
+                phoneStock[index++] = new Phone(brand, model, price, stockQuantity);
             }
-            JOptionPane.showMessageDialog(null, "Phone details saved to file.");
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(null, "Error saving phone details to file.");
+            // Ignore if the file doesn't exist or cannot be read
+        }
+    }
+
+    // Method to save phone details to a file
+    public static void savePhoneDetailsToFile(Phone[] phoneStock, String filePath) {
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
+            for (Phone phone : phoneStock) {
+                if (phone != null) {
+                    // Write phone details to the file
+                    writer.println(phone.getBrand() + "," + phone.getModel() + ","
+                            + phone.getPrice() + "," + phone.getStockQuantity());
+                }
+            }
+            JOptionPane.showMessageDialog(null, "Phone details saved to file successfully.");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error occurred while saving phone details to file.");
+            e.printStackTrace();
+        }
+    }
+
+    // Method to sort phone stock by price using Bubble Sort
+    public static void sortPhoneStockByPrice(Phone[] phoneStock) {
+        int n = phoneStock.length;
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - i - 1; j++) {
+                if (phoneStock[j] != null && phoneStock[j + 1] != null
+                        && phoneStock[j].getPrice() > phoneStock[j + 1].getPrice()) {
+                    // Swap phone objects
+                    Phone temp = phoneStock[j];
+                    phoneStock[j] = phoneStock[j + 1];
+                    phoneStock[j + 1] = temp;
+                }
+            }
+        }
+    }
+
+    // Method to update phone details
+    public static void updatePhoneDetails(Phone[] phoneStock) {
+        // Input data for searching
+        String brandToSearch = JOptionPane.showInputDialog("Enter the brand of the phone to update:");
+
+        // Search for phones with the specified brand in the array
+        boolean found = false;
+        for (Phone phone : phoneStock) {
+            if (phone != null && phone.getBrand().equalsIgnoreCase(brandToSearch)) {
+                found = true;
+
+                // Display current details of the phone
+                JOptionPane.showMessageDialog(null, "Current details:\n"
+                        + "Brand: " + phone.getBrand() + "\n"
+                        + "Model: " + phone.getModel() + "\n"
+                        + "Price: " + phone.getPrice() + "\n"
+                        + "Stock Quantity: " + phone.getStockQuantity());
+
+                // Input updated details
+                String model = JOptionPane.showInputDialog("Enter the updated model:");
+                double price = Double.parseDouble(JOptionPane.showInputDialog("Enter the updated price:"));
+                int stockQuantity = Integer.parseInt(JOptionPane.showInputDialog("Enter the updated stock quantity:"));
+
+                // Update phone details
+                phone.setModel(model);
+                phone.setPrice(price);
+                phone.setStockQuantity(stockQuantity);
+
+                JOptionPane.showMessageDialog(null, "Phone details updated successfully.");
+                break;
+            }
+        }
+
+        if (!found) {
+            JOptionPane.showMessageDialog(null, "No phones found with brand '" + brandToSearch + "'.");
         }
     }
 }
